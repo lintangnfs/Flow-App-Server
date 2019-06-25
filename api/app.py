@@ -18,7 +18,8 @@ from api.resources.statisticEnd import StatisticEnd
 from api.resources.statisticSummary import StatisticSummary
 from api.resources.countAttempt import CountAttempt
 from api.resources.alphaMiner import AlphaMiner
-
+from api.resources.changeCaseid import ChangeCaseID
+from api.resources.chooseAlpha import ChooseAlpha
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -42,3 +43,5 @@ api.add_resource(StatisticEnd, '/api/statisticend')
 api.add_resource(StatisticSummary, '/api/statisticsummary')
 api.add_resource(CountAttempt, '/api/countattempt')
 api.add_resource(AlphaMiner, '/api/alphaminer')
+api.add_resource(ChangeCaseID, '/api/changecaseid')
+api.add_resource(ChooseAlpha, '/api/choosealpha')
