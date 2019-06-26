@@ -8,8 +8,7 @@ import snakes.plugins
 snakes.plugins.load('gv', 'snakes.nets', 'nets')
 from sortedcontainers import SortedList, SortedSet, SortedDict
 from nets import *
-import warnings
-warnings.filterwarnings('ignore')
+
 
 # from enum import Enum
 # from sortedcontainers import SortedList, SortedSet, SortedDict
@@ -22,6 +21,44 @@ warnings.filterwarnings('ignore')
 raw_file = 'api/static/data/rawc.csv'
 final_file = 'api/static/data/final.csv'
 
+class RunAlgo(Resource):
+    
+    def get(self):
+
+        algoritma = AlgoritmaAlpha(pd.read_csv(final_file))
+        # 1. Transition
+        transition = algoritma.getTransitions()
+        # 2. Initial Transition
+        intialTransition = algoritma.getInitialTransitions()
+        # 3. finalTransition
+        finalTransition = algoritma.getFinalTransitions()
+        # 4. relation
+        relation = algoritma.extractRelations()
+        # 5. pairs
+        pairs = algoritma.computePairs()
+        print(pairs)
+        # 6. maximalPairs
+        maximalPairs = algoritma.extract_maximal_pairs()
+        # 7. places
+        places = algoritma.add_places()
+        # Gambar
+        algoritma.extract_Petri_Net()
+        
+
+        return json.dumps(
+            {
+                'data': {
+                    'transition': list(transition),
+                    'initialTransition': list(intialTransition),
+                    'finalTransition': list(finalTransition),
+                    'relation': list(relation),
+                    'pairs': pairs,
+                    'maximalPairs': maximalPairs,
+                    'places': places
+                }
+            }
+        )
+
 class Relations(Enum):
     SUCCESSIONS     = '>'
     RIGHT_CAUSALITY = '->'
@@ -30,11 +67,11 @@ class Relations(Enum):
     CHOICES         = '#'
 
 # Class Alpha Miner
-class Algoritma:
-    
+class AlgoritmaAlpha():
+
     def __init__(self, data):
         
-        if 'User full name' in data.columns and 'Event name' in data.columns:
+        if 'case_id' in data.columns and 'task' in data.columns:
             self.data = data
         else:
             raise Exception('Sorry your data is not ready yet')
@@ -65,35 +102,35 @@ class Algoritma:
         # Petri NET
         self.PetriNet = None
         
-        case_id = self.data['User full name'].unique()
+        case_id = self.data['case_id'].unique()
 
         for x in case_id:
-            self.each_case_list.append(self.data[self.data['User full name'] == x])
-        
+            self.each_case_list.append(self.data[self.data['case_id'] == x])
+    
     def getTransitions(self):
         
         for val in self.each_case_list:
-            for activity in val['Event name']:
+            for activity in val['task']:
                 self.transitions.add(activity)
         return self.transitions
 
     def getInitialTransitions(self):
         
         for val in self.each_case_list:
-            self.initial_transitions.add(val['Event name'].iloc[0])
+            self.initial_transitions.add(val['task'].iloc[0])
         return self.initial_transitions
     
     def getFinalTransitions(self):
         
         for val in self.each_case_list:
-            self.final_transitions.add(val['Event name'].iloc[-1])
+            self.final_transitions.add(val['task'].iloc[-1])
         return self.final_transitions
     
     def extractRelations(self):
         
         non_repetitive_trace = SortedSet()
         for val in self.each_case_list:
-            non_repetitive_trace.add("".join(val['Event name']))
+            non_repetitive_trace.add("".join(val['task']))
         
         
         for transition1 in self.transitions:
@@ -199,8 +236,9 @@ class Algoritma:
                         new_pair = (pair_choices2,pair_choices1)
                     pairs.append(new_pair)
                     
-        print(pairs)    
+        # print(pairs)    
         self.pairs = pairs
+        return self.pairs
     
     def extract_maximal_pairs(self):
         pos1 = 0
@@ -239,20 +277,20 @@ class Algoritma:
                     pair_appended.append(SortedSet(flat_pair1))
             pos1 = pos1 + 1
         
-        print(maximal_pairs)
+        # print(maximal_pairs)
         self.maximal_pairs = maximal_pairs
-        
-        pass
+        return self.maximal_pairs
     
     def add_places(self):
         cpt = 0
-        self.places.append(("P"+str(cpt),self.initial_transitions))
+        self.places.append(("P"+str(cpt),list(self.initial_transitions)))
         cpt = 1
         for pair in self.maximal_pairs:
             self.places.append((pair[0],"P"+str(cpt),pair[1]))
             cpt+=1
-        self.places.append((self.final_transitions,"P"+str(cpt)))
-        print(self.places)
+        self.places.append((list(self.final_transitions),"P"+str(cpt)))
+        # print(self.places)
+        return self.places
     
     def extract_Petri_Net(self):
         petri = PetriNet('N')
@@ -272,18 +310,15 @@ class Algoritma:
             petri.add_input('p'+str(0),transition,Value(dot))
         cpt_p = 1
         for pair in self.maximal_pairs:
-            print(pair)
-            print("pair111",pair[0])
-            print("paiiiir2222",pair[1])
+            # print(pair)
           
-            
             if type(pair[0]) == str and type(pair[1]) == str:
-                print(pair)
+                # print(pair)
                 petri.add_output('p'+str(cpt_p), pair[0],Value(dot))
                 petri.add_input('p'+str(cpt_p), pair[1],Value(dot))
                 cpt_p+=1
             else:
-                print(pair)
+                # print(pair)
                 for transition in pair[0]:
                     petri.add_output('p'+str(cpt_p), transition,Value(dot))
                 for transition in pair[1]:
@@ -293,6 +328,7 @@ class Algoritma:
         for transition in self.final_transitions:
             petri.add_output('p'+str(cpt_p),transition,Value(dot))
         self.PetriNet = petri
+        # return self.PetriNet
                     
 
         

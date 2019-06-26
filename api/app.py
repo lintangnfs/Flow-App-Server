@@ -17,7 +17,7 @@ from api.resources.statisticStart import StatisticStart
 from api.resources.statisticEnd import StatisticEnd
 from api.resources.statisticSummary import StatisticSummary
 from api.resources.countAttempt import CountAttempt
-from api.resources.alphaMiner import AlphaMiner
+from api.resources.alphaMiner import RunAlgo
 from api.resources.changeCaseid import ChangeCaseID
 from api.resources.chooseAlpha import ChooseAlpha
 
@@ -42,6 +42,6 @@ api.add_resource(StatisticStart, '/api/statisticstart')
 api.add_resource(StatisticEnd, '/api/statisticend')
 api.add_resource(StatisticSummary, '/api/statisticsummary')
 api.add_resource(CountAttempt, '/api/countattempt')
-api.add_resource(AlphaMiner, '/api/alphaminer')
+api.add_resource(RunAlgo, '/api/algoritmaalpha')
 api.add_resource(ChangeCaseID, '/api/changecaseid')
 api.add_resource(ChooseAlpha, '/api/choosealpha')
