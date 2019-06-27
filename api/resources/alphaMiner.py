@@ -1,6 +1,7 @@
 from flask_restful import Resource, request
 import pandas as pd, json, os,  numpy as np
 import sys
+import base64
 from enum import Enum
 import itertools
 import pygame
@@ -20,10 +21,14 @@ from nets import *
 # Path to raw and final csv
 raw_file = 'api/static/data/rawc.csv'
 final_file = 'api/static/data/final.csv'
+image_petriNet = 'api/static/img/net-with-colors.png'
 
 class RunAlgo(Resource):
     
     def get(self):
+        # display data
+        data, column = display(final_file)
+        image = imageEncode(image_petriNet)
 
         algoritma = AlgoritmaAlpha(pd.read_csv(final_file))
         # 1. Transition
@@ -36,14 +41,13 @@ class RunAlgo(Resource):
         relation = algoritma.extractRelations()
         # 5. pairs
         pairs = algoritma.computePairs()
-        print(pairs)
         # 6. maximalPairs
         maximalPairs = algoritma.extract_maximal_pairs()
         # 7. places
         places = algoritma.add_places()
         # Gambar
         algoritma.extract_Petri_Net()
-        
+        print(algoritma.show(model = "Petrinet"))
 
         return json.dumps(
             {
@@ -54,10 +58,48 @@ class RunAlgo(Resource):
                     'relation': list(relation),
                     'pairs': pairs,
                     'maximalPairs': maximalPairs,
-                    'places': places
-                }
+                    'places': places,
+                    'data': data,
+                    'column': column,
+                    'image' : image
+                },
+                'status': 'success',
+                'message': 'sukses'
             }
         )
+
+def imageEncode(path):
+    image = {}
+    with open(path, mode='rb') as file:
+        img = file.read()
+    image['img'] = base64.encodebytes(img).decode("utf-8")
+    return image['img']
+
+
+def display(path):
+    # Load final file
+    data = pd.read_csv(path)
+    data = data[['case_id','task']]
+
+    # Get header from file
+    head = list(data.columns.values)
+
+    # Initialize data
+    final = []
+
+    # Store the data
+    for el in data.values:
+        row = {}
+        for e in range(0, len(el)):
+            row[head[e]] = el[e]
+        final.append(row)
+    
+    # Header data
+    final_head = []
+    for k in data.keys():
+        final_head.append(k)
+
+    return final, final_head
 
 class Relations(Enum):
     SUCCESSIONS     = '>'
@@ -276,8 +318,7 @@ class AlgoritmaAlpha():
                     maximal_pairs.append(pair1)
                     pair_appended.append(SortedSet(flat_pair1))
             pos1 = pos1 + 1
-        
-        # print(maximal_pairs)
+
         self.maximal_pairs = maximal_pairs
         return self.maximal_pairs
     
@@ -289,7 +330,7 @@ class AlgoritmaAlpha():
             self.places.append((pair[0],"P"+str(cpt),pair[1]))
             cpt+=1
         self.places.append((list(self.final_transitions),"P"+str(cpt)))
-        # print(self.places)
+
         return self.places
     
     def extract_Petri_Net(self):
@@ -304,16 +345,13 @@ class AlgoritmaAlpha():
         
         for transition in self.transitions:
             petri.add_transition(Transition(transition))
-#         print(self.initial_transitions)
         
         for transition in self.initial_transitions:
             petri.add_input('p'+str(0),transition,Value(dot))
         cpt_p = 1
         for pair in self.maximal_pairs:
-            # print(pair)
           
             if type(pair[0]) == str and type(pair[1]) == str:
-                # print(pair)
                 petri.add_output('p'+str(cpt_p), pair[0],Value(dot))
                 petri.add_input('p'+str(cpt_p), pair[1],Value(dot))
                 cpt_p+=1
@@ -328,10 +366,7 @@ class AlgoritmaAlpha():
         for transition in self.final_transitions:
             petri.add_output('p'+str(cpt_p),transition,Value(dot))
         self.PetriNet = petri
-        # return self.PetriNet
-                    
-
-        
+                         
     def show(self, model = None):
         
         def draw_place(place, attr):
@@ -342,4 +377,4 @@ class AlgoritmaAlpha():
                 attr['label'] = trans.name
             else :
                 attr['label'] = '%s\n%s' % (trans.name, trans.guard)
-        self.PetriNet.draw(',net-with-colors.png',place_attr=draw_place, trans_attr=draw_transition)
+        self.PetriNet.draw('api/static/img/net-with-colors.png',place_attr=draw_place, trans_attr=draw_transition)
