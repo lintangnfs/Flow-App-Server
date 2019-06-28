@@ -30,6 +30,9 @@ class RunAlgo(Resource):
         data, column = display(final_file)
         image = imageEncode(image_petriNet)
 
+        # encode data tuple
+        enc = MultiDimensionalArrayEncoder()
+        # Alpha Miner
         algoritma = AlgoritmaAlpha(pd.read_csv(final_file))
         # 1. Transition
         transition = algoritma.getTransitions()
@@ -47,26 +50,45 @@ class RunAlgo(Resource):
         places = algoritma.add_places()
         # Gambar
         algoritma.extract_Petri_Net()
-        print(algoritma.show(model = "Petrinet"))
+        # print(algoritma.show(model = "Petrinet"))
+        print(relation)
+        print(enc.encode(list(relation)))
+        # Relation
+        pd.DataFrame.from_dict(relation, orient='index').to_csv('api/static/data/relation.csv')
+        relation_data, relation_column = displayRelation('api/static/data/relation.csv')
 
         return json.dumps(
             {
                 'data': {
-                    'transition': list(transition),
-                    'initialTransition': list(intialTransition),
+                    'transition': enc.encode(list(transition)),
+                    'initialTransition': enc.encode(list(intialTransition)),
                     'finalTransition': list(finalTransition),
-                    'relation': list(relation),
-                    'pairs': pairs,
-                    'maximalPairs': maximalPairs,
-                    'places': places,
+                    'pairs': enc.encode(pairs),
+                    'maximalPairs': enc.encode(maximalPairs),
+                    'places': enc.encode(places),
                     'data': data,
                     'column': column,
-                    'image' : image
+                    'image' : image,
+                    'relation_data': relation_data,
+                    'relation_column': relation_column
                 },
                 'status': 'success',
-                'message': 'sukses'
+                'message': 'Successfully load data'
             }
         )
+
+class MultiDimensionalArrayEncoder(json.JSONEncoder):
+    def encode(self, obj):
+        def hint_tuples(item):
+            if isinstance(item, tuple):
+                return {'pairs': item}
+            if isinstance(item, list):
+                return [hint_tuples(e) for e in item]
+            if isinstance(item, dict):
+                return {key: hint_tuples(value) for key, value in item.items()}
+            else:
+                return item
+        return super(MultiDimensionalArrayEncoder, self).encode(hint_tuples(obj))
 
 def imageEncode(path):
     image = {}
@@ -75,11 +97,34 @@ def imageEncode(path):
     image['img'] = base64.encodebytes(img).decode("utf-8")
     return image['img']
 
-
 def display(path):
     # Load final file
     data = pd.read_csv(path)
     data = data[['case_id','task']]
+
+    # Get header from file
+    head = list(data.columns.values)
+
+    # Initialize data
+    final = []
+
+    # Store the data
+    for el in data.values:
+        row = {}
+        for e in range(0, len(el)):
+            row[head[e]] = el[e]
+        final.append(row)
+    
+    # Header data
+    final_head = []
+    for k in data.keys():
+        final_head.append(k)
+
+    return final, final_head
+
+def displayRelation(path):
+    # Load final file
+    data = pd.read_csv(path)
 
     # Get header from file
     head = list(data.columns.values)
@@ -194,13 +239,10 @@ class AlgoritmaAlpha():
                             relation = Relations.LEFT_CAUSALITY
                 if relation == None:
                     relation = Relations.CHOICES
-                self.relations[transition1][transition2] = relation
-                
-                
+                self.relations[transition1][transition2] = relation          
         return self.relations
     
     def computePairs(self):
-        
         pairs_causality = []
         pairs_choices = []
         pairs = []
