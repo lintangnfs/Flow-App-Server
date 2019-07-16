@@ -7,21 +7,14 @@ import itertools
 import pygame
 import snakes.plugins
 snakes.plugins.load('gv', 'snakes.nets', 'nets')
-from sortedcontainers import SortedList, SortedSet, SortedDict
+# from snakes.nets import *
 from nets import *
-
-
-# from enum import Enum
-# from sortedcontainers import SortedList, SortedSet, SortedDict
-# from nets import *
-# from IPython.display import Image
-
-# snakes.plugins.load('gv','snakes.nets','nets')
+from sortedcontainers import SortedList, SortedSet, SortedDict
 
 # Path to raw and final csv
 raw_file = 'api/static/data/rawc.csv'
 final_file = 'api/static/data/final.csv'
-image_petriNet = 'api/static/img/net-with-colors.png'
+image_petriNet = 'api/static/img/petri-net.png'
 
 class RunAlgo(Resource):
     
@@ -50,9 +43,7 @@ class RunAlgo(Resource):
         places = algoritma.add_places()
         # Gambar
         algoritma.extract_Petri_Net()
-        # print(algoritma.show(model = "Petrinet"))
-        print(relation)
-        print(enc.encode(list(relation)))
+        print(algoritma.show(model = "Petrinet"))
         # Relation
         pd.DataFrame.from_dict(relation, orient='index').to_csv('api/static/data/relation.csv')
         relation_data, relation_column = displayRelation('api/static/data/relation.csv')
@@ -419,4 +410,4 @@ class AlgoritmaAlpha():
                 attr['label'] = trans.name
             else :
                 attr['label'] = '%s\n%s' % (trans.name, trans.guard)
-        self.PetriNet.draw('api/static/img/net-with-colors.png',place_attr=draw_place, trans_attr=draw_transition)
+        self.PetriNet.draw('api/static/img/petri-net.png',place_attr=draw_place, trans_attr=draw_transition)

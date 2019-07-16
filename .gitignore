@@ -120,7 +120,7 @@ dmypy.json
 .pyre/
 
 ### Python Patch ###
-.venv/
+# .venv/
 
 # End of https://www.gitignore.io/api/python
 

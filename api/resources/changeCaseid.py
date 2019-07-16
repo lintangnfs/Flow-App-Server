@@ -29,9 +29,12 @@ class ChangeCaseID(Resource):
             else:
                 data = pd.read_csv(raw_file)
 
-            change(data, args['data']['col1'], args['data']['col2'], args['data']['col3'], args['data']['value'])
+            change(data, args['data']['col1'], args['data']['col2'], args['data']['col3'])
 
-            data.to_csv(final_file, index=False)
+            data = data.reindex(index=data.index[::-1])
+            data.to_csv(os.path.join(final_file), index=False)
+            
+            # data.to_csv(final_file, index=False)
             return json.dumps(
                 {
                     'data': list(data.columns),
@@ -48,13 +51,14 @@ class ChangeCaseID(Resource):
                 }
             )
     
-def change(data, col1, col2, col3, value):
+def change(data, col1, col2, col3):
     try:
         # Replace value in 'User full name' column using value in 'Event name' column 
         # if 'Event name' = 'Course completed' or 'Course activity completion update'
         for i in range(data.shape[0]):
-            if data[col3].iloc[i] == value :
+            if data[col3].iloc[i] == 'Course completed' :
                 data[col1].iloc[i] = data[col2].iloc[i]
-            
+            if data[col3].iloc[i] == 'Course activity completion updated' :
+                data[col1].iloc[i] = data[col2].iloc[i]
     except Exception as e:
         return e
