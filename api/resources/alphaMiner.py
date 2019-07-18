@@ -250,7 +250,7 @@ class AlgoritmaAlpha():
 
         pairs= pairs_causality
         i = 0
-        j = len(pairs_causality)
+        j = len(pairs_choices)
         while i < j:
             set_i = pairs_choices[i]
             for pair in pairs_choices:
